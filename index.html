@@ -20,7 +20,7 @@
     <p>ユーザーIDを入力して出力ボタンを押してください</p>
 </div>
 <div>
-    <input type="text" id="userid" placeholder="ユーザーID(ex:qiita)" required autofocus>
+    <input type="text" id="userid" pattern="[\w-]{3,}" placeholder="ユーザーID(ex:qiita)" required autofocus>
     <input type="checkbox" id="ignore">
     <label for="ignore">1件のタグを無視する</label>
 
