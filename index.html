@@ -12,7 +12,7 @@
             width: 100%;
         }
     </style>
-    <script src="markdown.js"></script>
+    <script src="markdown-it.js"></script>
 </head>
 <body>
 <div>
@@ -115,11 +115,10 @@
 
     function getSortedTags(tags) {
         tags = Object.entries(tags)
+        // 同数のタグの並びをよくするため、文字列ソートは必ず通しておく
+        tags = tags.sort(nameSort)
         if (document.querySelector('#pop').checked) {
-            // sort count
             tags = tags.sort(popSort)
-        } else {
-            tags = tags.sort(nameSort)
         }
         console.log('sorted tags', tags)
         return tags
@@ -211,9 +210,7 @@
     })
 
     document.querySelector('#html').addEventListener('click',() => {
-        markdown.ready.then(() => {
-            document.querySelector('#markup').innerHTML = markdown.parse(document.querySelector('#markdown').value)
-        })
+        document.querySelector('#markup').innerHTML = (new markdownit).render(document.querySelector('#markdown').value)
     })
 </script>
 </body>
