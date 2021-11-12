@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Qiitaユーザーのタグ検索画面へのリンク集を作成します</title>
+    <style type="text/css">
+        div {
+            margin-left: 3%;
+        }
+        #markdown {
+            width: 100%;
+        }
+    </style>
+    <script src="markdown.js"></script>
+</head>
+<body>
+<div>
+    <p><a href="https://qiita.com/">Qiita</a>ユーザーの直近100件の投稿タグを利用した検索画面への個人用リンク集を作成します</p>
+    <p>ユーザーIDを入力して出力ボタンを押してください</p>
+</div>
+<div>
+    <input type="text" id="userid" placeholder="ユーザーID(ex:qiita)" required autofocus>
+    <input type="checkbox" id="ignore">
+    <label for="ignore">1件のタグを無視する</label>
+
+</div>
+<div>
+    <span>タグの並び:</span>
+    <input type="radio" name="tagsort" id='pop' checked="true">
+    <label for="pop">記事数順</label>
+    <input type="radio" name="tagsort" id='asc'>
+    <label for="asc">名前順</label>
+</div>
+<div>
+    <span>検索画面の並び:</span>
+    <input type="radio" name="searchsort" id='created' checked="true">
+    <label for="created">新着順</label>
+    <input type="radio" name="searchsort" id='rel'>
+    <label for="rel">関連順</label>
+    <input type="radio" name="searchsort" id='stock'>
+    <label for="stock">ストック数順</label>
+    <input type="radio" name="searchsort" id='like'>
+    <label for="like">LGTM数順</label>
+</div>
+<div>
+    <button id="getlist" type="button">タグを手動で選択する</button>
+    <select id="list" multiple="true"></select>
+</div>
+<div>
+    <button id="output" type="button">Markdownを出力</button>
+    
+</div>
+<hr>
+<div>
+    <button id="copy">クリップボードにコピー</button>
+
+</div>
+<div>
+    <textarea id="markdown" rows="15" placeholder="# [khskの記事](https://qiita.com/search?sort=like&q=user:khsk)
+# [C#](https://qiita.com/search?sort=like&q=user:khsk+tag:C%23)
+# [C++](https://qiita.com/search?sort=like&q=user:khsk+tag:C%2B%2B)
+# [HTML](https://qiita.com/search?sort=like&q=user:khsk+tag:HTML)
+# [JavaScript](https://qiita.com/search?sort=like&q=user:khsk+tag:JavaScript)
+# [Node.js](https://qiita.com/search?sort=like&q=user:khsk+tag:Node.js)
+# [PHP](https://qiita.com/search?sort=like&q=user:khsk+tag:PHP)
+# [Ruby](https://qiita.com/search?sort=like&q=user:khsk+tag:Ruby)
+# (外部検索)[Google検索](https://www.google.com/search?q=site:https://qiita.com/khsk)"></textarea>
+</div>
+<div>
+    <button id="html">HTMLに変換</button>
+</div>
+<div id="markup"></div>
+
+
+<script type="text/javascript">
+
+    function validateUserId() {
+        return document.querySelector('#userid').reportValidity()
+    }
+
+    async function fetchItems(){
+        if (!validateUserId()) {
+            return
+        }
+        const url = 'https://qiita.com/api/v2/items?per_page=100&query=user:'
+        const res = await fetch(url + document.querySelector('#userid').value)
+        return res.json()
+    }
+
+    function extractTags(json) {
+        const tags = json.reduce((currentTags, item) => {
+            item.tags.forEach(tag => {
+                if(currentTags.hasOwnProperty(tag.name)) {
+                    currentTags[tag.name].count += 1
+                } else {
+                    currentTags[tag.name] = {
+                        name: tag.name,
+                        count: 1,
+                    }
+                }
+            })
+            return currentTags
+        }, {})
+        return tags
+    }
+
+    function popSort(a, b) {
+        return b[1].count - a[1].count
+    }
+
+    function nameSort(a, b) {
+        return a[1].name.localeCompare(b[1].name)
+    }
+
+    function getSortedTags(tags) {
+        tags = Object.entries(tags)
+        if (document.querySelector('#pop').checked) {
+            // sort count
+            tags = tags.sort(popSort)
+        } else {
+            tags = tags.sort(nameSort)
+        }
+        console.log('sorted tags', tags)
+        return tags
+    }
+
+    function deleteSingleTags(tags) {
+        for (p in tags) {
+            if (tags[p].count == 1) {
+                delete tags[p]
+            }
+        }
+        return tags
+    }
+
+    document.querySelector('#getlist').addEventListener('click', () => {
+        if (!validateUserId()) {
+            return
+        }
+        const getList = document.querySelector('#getlist')
+        const tmpButtonText = getList.textContent
+        getList.textContent = '取得中…'
+        getList.disabled = 'true'
+        document.querySelector('#output').disabled = 'true'
+        fetchItems().then(items => {
+            let tags = extractTags(items)
+            if (document.querySelector('#ignore').checked) {
+                deleteSingleTags(tags)
+            }
+            tags = getSortedTags(tags)
+            const list = document.querySelector('#list')
+            list.innerHTML = ''
+            list.size = 5
+            const option = document.createElement('option')
+            tags.forEach(tag => {
+                const option = document.createElement('option')
+                option.textContent = tag[0]
+                option.value = tag[0]
+                list.appendChild(option)
+            })
+            getList.textContent = tmpButtonText
+            getList.disabled = ''
+            document.querySelector('#output').disabled = ''
+        })
+    })
+
+    document.querySelector('#output').addEventListener('click',async () => {
+        if (!validateUserId()) {
+            return
+        }
+        const mdButton = document.querySelector('#output')
+        const tmpButtonText = mdButton.textContent
+        mdButton.textContent = '処理…'
+        mdButton.disabled = 'true'
+        document.querySelector('#getlist').disabled = 'true'
+
+        const options = document.querySelectorAll('option:checked')
+        let tags
+        if (options.length) {
+            tags = Array.from(options).map((option) => option.value)
+        } else {
+            const items = await fetchItems()
+            tags = extractTags(items)
+            if (document.querySelector('#ignore').checked) {
+                tags = deleteSingleTags(tags)
+            }
+            tags = getSortedTags(tags).map(tag => tag[0])
+        }
+        const userid = document.querySelector('#userid').value
+        const baseUrl = 'https://qiita.com/search?sort=' + document.querySelector('input[name="searchsort"]:checked').id + '&q=user:' + encodeURIComponent(userid)
+        let mdText = ''
+
+        mdText += '# [' + userid + 'の記事](' + baseUrl + ')\n'
+        tags.forEach(tag => {
+            mdText += '# [' + tag + '](' + baseUrl + '+tag:' + encodeURIComponent(tag)  + ')\n'
+        })
+        mdText += '# (外部検索)[Google検索](https://www.google.com/search?q=site:https://qiita.com/' + encodeURIComponent(userid) + ')'
+
+        document.querySelector('#markdown').value = mdText
+
+        mdButton.textContent = tmpButtonText
+        mdButton.disabled = ''
+        document.querySelector('#getlist').disabled = ''
+    })
+
+    document.querySelector('#copy').addEventListener('click',() => {
+        navigator.clipboard.writeText(document.querySelector('#markdown').value).then(() => {
+            document.querySelector('#copy').textContent = 'コピーしました'
+        })
+    })
+
+    document.querySelector('#html').addEventListener('click',() => {
+        markdown.ready.then(() => {
+            document.querySelector('#markup').innerHTML = markdown.parse(document.querySelector('#markdown').value)
+        })
+    })
+</script>
+</body>
+</html>
+
