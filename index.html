@@ -65,7 +65,7 @@
 # [Node.js](https://qiita.com/search?sort=like&q=user:khsk+tag:Node.js)
 # [PHP](https://qiita.com/search?sort=like&q=user:khsk+tag:PHP)
 # [Ruby](https://qiita.com/search?sort=like&q=user:khsk+tag:Ruby)
-# (外部検索)[Google検索](https://www.google.com/search?q=site:https://qiita.com/khsk)"></textarea>
+# (外部検索)[Google検索](https://www.google.com/search?q=site:qiita.com/khsk)"></textarea>
 </div>
 <div>
     <button id="html">HTMLに変換</button>
@@ -193,7 +193,7 @@
         tags.forEach(tag => {
             mdText += '# [' + tag + '](' + baseUrl + '+tag:' + encodeURIComponent(tag)  + ')\n'
         })
-        mdText += '# (外部検索)[Google検索](https://www.google.com/search?q=site:https://qiita.com/' + encodeURIComponent(userid) + ')'
+        mdText += '# (外部検索)[Google検索](https://www.google.com/search?q=site:qiita.com/' + encodeURIComponent(userid) + ')'
 
         document.querySelector('#markdown').value = mdText
 
